@@ -1,7 +1,82 @@
 document.addEventListener("DOMContentLoaded", function () {
     loadChemicals();
+    applySettings();
+
     const form = document.getElementById("chemicalForm");
     const searchInput = document.getElementById("search");
+
+    // Navigation
+    const navLinks = {
+        dashboard: document.getElementById('nav-dashboard'),
+        reports: document.getElementById('nav-reports'),
+        settings: document.getElementById('nav-settings')
+    };
+
+    const sections = {
+        dashboard: document.getElementById('dashboard-section'),
+        reports: document.getElementById('reports-section'),
+        settings: document.getElementById('settings-section')
+    };
+
+    function setActiveSection(sectionName) {
+        // Update Nav Links
+        Object.values(navLinks).forEach(link => link.classList.remove('active'));
+        if (navLinks[sectionName]) navLinks[sectionName].classList.add('active');
+
+        // Update Sections
+        Object.values(sections).forEach(section => section.classList.add('d-none'));
+        if (sections[sectionName]) sections[sectionName].classList.remove('d-none');
+    }
+
+    if (navLinks.dashboard) navLinks.dashboard.addEventListener('click', (e) => { e.preventDefault(); setActiveSection('dashboard'); });
+    if (navLinks.reports) navLinks.reports.addEventListener('click', (e) => { e.preventDefault(); setActiveSection('reports'); });
+    if (navLinks.settings) navLinks.settings.addEventListener('click', (e) => { e.preventDefault(); setActiveSection('settings'); });
+
+    // Handle Settings
+    const settingsForm = document.getElementById('settings-form');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const defaultLabInput = document.getElementById('defaultLab');
+
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const settings = {
+                darkMode: darkModeToggle.checked,
+                defaultLab: defaultLabInput.value
+            };
+            localStorage.setItem('inventorySettings', JSON.stringify(settings));
+            applySettings();
+            alert('Settings Saved!');
+        });
+    }
+
+    function applySettings() {
+        const settings = JSON.parse(localStorage.getItem('inventorySettings')) || {};
+
+        // Dark Mode
+        if (settings.darkMode) {
+            document.body.classList.add('dark-mode');
+            if (darkModeToggle) darkModeToggle.checked = true;
+        } else {
+            document.body.classList.remove('dark-mode');
+            if (darkModeToggle) darkModeToggle.checked = false;
+        }
+
+        // Default Lab (Pre-fill in Add Modal)
+        if (defaultLabInput) defaultLabInput.value = settings.defaultLab || '';
+    }
+
+    // Pre-fill Lab on Modal Open
+    const addChemicalModal = document.getElementById('addChemicalModal');
+    if (addChemicalModal) {
+        addChemicalModal.addEventListener('show.bs.modal', function () {
+            const settings = JSON.parse(localStorage.getItem('inventorySettings')) || {};
+            const labInput = document.getElementById('lab');
+            if (labInput && settings.defaultLab) {
+                labInput.value = settings.defaultLab;
+            }
+        });
+    }
 
     // Handle Form Submission
     if (form) {
@@ -51,9 +126,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     form.reset();
                     form.classList.remove('was-validated'); // Reset validation state
                     loadChemicals();
-
-                    // Show success message (optional, could use a toast)
-                    // alert("Chemical Added Successfully!"); 
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -75,24 +147,32 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function loadChemicals() {
+    window.loadChemicals = function () {
         let table = document.getElementById("chemicalTable");
         if (!table) return;
 
-        table.innerHTML = ""; // Clear existing rows
+        // Clear existing rows but NOT the table header if it was inside tbody (it's not)
+        table.innerHTML = "";
 
         fetch('/api/chemicals')
             .then(response => response.json())
             .then(chemicals => {
                 let today = new Date().toISOString().split("T")[0];
 
+                // Dashboard Statistics
+                let total = chemicals.length;
+                let expired = 0;
+                let lowStock = 0;
+
                 chemicals.forEach((c) => {
                     let statusBadge = '<span class="badge bg-success">Active</span>';
 
                     if (c.expiry < today) {
                         statusBadge = '<span class="badge bg-danger">Expired</span>';
+                        expired++;
                     } else if (c.quantity < 5) {
                         statusBadge = '<span class="badge bg-warning text-dark">Low Stock</span>';
+                        lowStock++;
                     }
 
                     // Hazard Badge Logic
@@ -118,6 +198,27 @@ document.addEventListener("DOMContentLoaded", function () {
                       `;
                     table.innerHTML += row;
                 });
+
+                // Update Dashboard Counters
+                const totalCountEl = document.getElementById('total-count');
+                const expiredCountEl = document.getElementById('expired-count');
+                const lowStockCountEl = document.getElementById('low-stock-count');
+
+                if (totalCountEl) totalCountEl.innerText = total;
+                if (expiredCountEl) expiredCountEl.innerText = expired;
+                if (lowStockCountEl) lowStockCountEl.innerText = lowStock;
+
+                // Bind Report Export
+                const exportBtn = document.getElementById('export-csv-btn');
+                if (exportBtn) {
+                    // Remove old listener to prevent duplicates if loadChemicals called multiple times
+                    const newBtn = exportBtn.cloneNode(true);
+                    exportBtn.parentNode.replaceChild(newBtn, exportBtn);
+
+                    newBtn.addEventListener('click', function () {
+                        exportToCSV(chemicals);
+                    });
+                }
             })
             .catch(error => console.error('Error:', error));
     }
@@ -137,4 +238,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 .catch(error => console.error('Error:', error));
         }
     };
+
+    function exportToCSV(data) {
+        const headers = ["ID", "Name", "Quantity", "Expiry", "Lab", "Hazard"];
+        const csvRows = [];
+        csvRows.push(headers.join(","));
+
+        data.forEach(row => {
+            const values = [
+                row.id,
+                `"${row.name}"`, // Quote strings to handle commas
+                row.quantity,
+                row.expiry,
+                `"${row.lab}"`,
+                row.hazard
+            ];
+            csvRows.push(values.join(","));
+        });
+
+        const csvString = csvRows.join("\n");
+        const blob = new Blob([csvString], { type: "text/csv" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.setAttribute("hidden", "");
+        a.setAttribute("href", url);
+        a.setAttribute("download", "inventory_report.csv");
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
 });

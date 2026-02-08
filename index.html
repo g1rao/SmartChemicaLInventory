@@ -25,13 +25,13 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#">Dashboard</a>
+                        <a class="nav-link active" href="#" id="nav-dashboard">Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Reports</a>
+                        <a class="nav-link" href="#" id="nav-reports">Reports</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Settings</a>
+                        <a class="nav-link" href="#" id="nav-settings">Settings</a>
                     </li>
                 </ul>
             </div>
@@ -47,52 +47,122 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container">
+    <div class="container main-container">
 
-        <!-- Controls -->
-        <div class="row mb-4 align-items-center">
-            <div class="col-md-6">
-                <!-- Button trigger modal -->
-                <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal"
-                    data-bs-target="#addChemicalModal">
-                    ➕ Add New Chemical
-                </button>
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="content-section">
+            <!-- Stats Row -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-white bg-primary mb-3 shadow-sm h-100">
+                        <div class="card-header">Total Chemicals</div>
+                        <div class="card-body">
+                            <h3 class="card-title" id="total-count">0</h3>
+                            <p class="card-text">Items in inventory</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-white bg-danger mb-3 shadow-sm h-100">
+                        <div class="card-header">Expired</div>
+                        <div class="card-body">
+                            <h3 class="card-title" id="expired-count">0</h3>
+                            <p class="card-text">Chemicals past expiry</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-white bg-warning text-dark mb-3 shadow-sm h-100">
+                        <div class="card-header">Low Stock</div>
+                        <div class="card-body">
+                            <h3 class="card-title" id="low-stock-count">0</h3>
+                            <p class="card-text">Items needing reorder</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0">🔍</span>
-                    <input type="text" class="form-control border-start-0 ps-0" id="search"
-                        placeholder="Search chemicals...">
+
+            <!-- Controls -->
+            <div class="row mb-4 align-items-center">
+                <div class="col-md-6">
+                    <!-- Button trigger modal -->
+                    <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal"
+                        data-bs-target="#addChemicalModal">
+                        ➕ Add New Chemical
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">🔍</span>
+                        <input type="text" class="form-control border-start-0 ps-0" id="search"
+                            placeholder="Search chemicals...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Table Card -->
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-secondary">📋 Current Inventory</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="loadChemicals()">🔄 Refresh</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Name</th>
+                                    <th>Quantity</th>
+                                    <th>Expiry Date</th>
+                                    <th>Lab</th>
+                                    <th>Hazard Level</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="chemicalTable">
+                                <!-- Rows will be injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Inventory Table Card -->
-        <div class="card shadow border-0 rounded-3">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-bold text-secondary">📋 Current Inventory</h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0 align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-4">Name</th>
-                                <th>Quantity</th>
-                                <th>Expiry Date</th>
-                                <th>Lab</th>
-                                <th>Hazard Level</th>
-                                <th>Status</th>
-                                <th class="text-end pe-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="chemicalTable">
-                            <!-- Rows will be injected by JS -->
-                        </tbody>
-                    </table>
+        <!-- Reports Section -->
+        <div id="reports-section" class="content-section d-none">
+            <h2 class="mb-4">Reports</h2>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Inventory Report</h5>
+                    <p class="card-text">Download a complete list of current chemical inventory in CSV format.</p>
+                    <button id="export-csv-btn" class="btn btn-success">📥 Export to CSV</button>
                 </div>
             </div>
         </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="content-section d-none">
+            <h2 class="mb-4">Settings</h2>
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form id="settings-form">
+                        <div class="mb-3 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="darkModeToggle">
+                            <label class="form-check-label" for="darkModeToggle">Enable Dark Mode</label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="defaultLab" class="form-label">Default Lab Name</label>
+                            <input type="text" class="form-control" id="defaultLab"
+                                placeholder="e.g. Chemistry Lab 101">
+                            <div class="form-text">This will be pre-filled when adding new chemicals.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Add Chemical Modal -->
