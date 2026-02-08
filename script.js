@@ -83,8 +83,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (form) {
         form.addEventListener("submit", function (e) {
             e.preventDefault();
+            console.log("Form submission started");
 
             if (!form.checkValidity()) {
+                console.log("Form validation failed");
                 e.stopPropagation();
                 form.classList.add('was-validated');
                 return;
@@ -95,6 +97,8 @@ document.addEventListener("DOMContentLoaded", function () {
             let expiry = document.getElementById("expiry").value;
             let lab = document.getElementById("lab").value;
             let hazard = document.getElementById("hazard").value;
+
+            console.log("Form Data:", { name, quantity, expiry, lab, hazard });
 
             // Extra Logic Check
             if (parseInt(quantity) <= 0) {
@@ -112,12 +116,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify(chemical)
             })
                 .then(response => {
+                    console.log("Server response status:", response.status);
                     if (!response.ok) {
-                        throw new Error("Validation Failed on Server");
+                        return response.json().then(err => { throw new Error(err.error || "Server validation failed") });
                     }
                     return response.json();
                 })
                 .then(data => {
+                    console.log("Chemical added successfully:", data);
                     // Close the modal
                     const modalElement = document.getElementById('addChemicalModal');
                     if (modalElement && typeof bootstrap !== 'undefined') {
@@ -129,10 +135,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     form.reset();
                     form.classList.remove('was-validated'); // Reset validation state
                     loadChemicals();
+                    alert("Chemical Added Successfully!");
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    alert("Failed to add chemical. Please check input.");
+                    console.error('Error adding chemical:', error);
+                    alert("Failed to add chemical: " + error.message);
                 });
         });
     }
@@ -157,9 +164,11 @@ document.addEventListener("DOMContentLoaded", function () {
         // Clear existing rows but NOT the table header if it was inside tbody (it's not)
         table.innerHTML = "";
 
-        fetch('/api/chemicals')
+        // Add timestamp to prevent caching
+        fetch('/api/chemicals?t=' + new Date().getTime())
             .then(response => response.json())
             .then(chemicals => {
+                console.log("Loaded chemicals:", chemicals); // Debug log
                 let today = new Date().toISOString().split("T")[0];
 
                 // Dashboard Statistics
