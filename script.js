@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
+    console.log("Smart Inventory Script Loaded");
     loadChemicals();
     applySettings();
 
@@ -119,8 +120,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(data => {
                     // Close the modal
                     const modalElement = document.getElementById('addChemicalModal');
-                    const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                    modalInstance.hide();
+                    if (modalElement && typeof bootstrap !== 'undefined') {
+                        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+                        modalInstance.hide();
+                    }
 
                     // Reset form and reload table
                     form.reset();

@@ -1,6 +1,8 @@
-# Smart Chemical Inventory System
+# Smart Chemical Inventory Management System for CBIT Labs
 
-A modern web-based application to manage laboratory chemical inventories efficiently and safely.
+**Problem Statement**: Chemical laboratories at CBIT manage hazardous chemicals using largely manual systems.
+
+**Description**: Develop a secure digital inventory system to track chemical usage, expiry dates, and safety compliance across laboratories.
 
 ## Features
 
